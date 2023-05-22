@@ -1,4 +1,5 @@
-# TUGAS Lab6 PHP Framework (Codeigniter) Pemograman Web 2
+# TUGAS Lab6 PHP Framework
+Pemograman WEB 2
 
 **_Nama : Kevin Suyadi Ritonga_** <br/>
 **_NIM : 312110081_** <br/>

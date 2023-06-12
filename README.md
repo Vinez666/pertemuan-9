@@ -1,5 +1,5 @@
-# TUGAS Lab6 PHP Framework (Codeigniter) Pemograman Web 2
+# TUGAS 
 
-**_Nama : Zaini Muhtarom_** <br/>
-**_NIM : 312110294_** <br/>
-**_Kelas : TI.21.A3_** <br/># pertemuan10
+**Nama : Kevin Suyadi Ritonga** <br/>
+**NIM : 312110081** <br/>
+**Kelas : TI.21.A3** <br/>

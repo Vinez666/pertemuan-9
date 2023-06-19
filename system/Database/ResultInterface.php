@@ -14,8 +14,8 @@ namespace CodeIgniter\Database;
 use stdClass;
 
 /**
- * @template TConnection
- * @template TResult
+ * @template TConnection of object|resource
+ * @template TResult of object|resource
  */
 interface ResultInterface
 {

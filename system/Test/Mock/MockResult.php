@@ -46,7 +46,7 @@ class MockResult extends BaseResult
     /**
      * Frees the current result.
      *
-     * @return void
+     * @return mixed
      */
     public function freeResult()
     {
@@ -59,11 +59,10 @@ class MockResult extends BaseResult
      *
      * @param int $n
      *
-     * @return bool
+     * @return mixed
      */
     public function dataSeek($n = 0)
     {
-        return true;
     }
 
     /**

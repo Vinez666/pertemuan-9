@@ -13,7 +13,6 @@ namespace CodeIgniter\Database\OCI8;
 
 use CodeIgniter\Database\BaseResult;
 use CodeIgniter\Entity\Entity;
-use stdClass;
 
 /**
  * Result for OCI8

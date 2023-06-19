@@ -16,10 +16,8 @@ use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\Validation\Exceptions\ValidationException;
 use CodeIgniter\View\RendererInterface;
-use Config\Services;
 use Config\Validation as ValidationConfig;
 use InvalidArgumentException;
-use LogicException;
 use TypeError;
 
 /**
@@ -42,18 +40,10 @@ class Validation implements ValidationInterface
     protected $ruleSetInstances = [];
 
     /**
-     * Stores the actual rules that should be run against $data.
+     * Stores the actual rules that should
+     * be ran against $data.
      *
      * @var array
-     *
-     * [
-     *     field1 => [
-     *         'label' => label,
-     *         'rules' => [
-     *              rule1, rule2, ...
-     *          ],
-     *     ],
-     * ]
      */
     protected $rules = [];
 
@@ -143,7 +133,8 @@ class Validation implements ValidationInterface
         // Run through each rule. If we have any field set for
         // this rule, then we need to run them through!
         foreach ($this->rules as $field => $setup) {
-            $rules = $setup['rules'];
+            // Blast $rSetup apart, unless it's already an array.
+            $rules = $setup['rules'] ?? $setup;
 
             if (is_string($rules)) {
                 $rules = $this->splitRules($rules);
@@ -248,7 +239,7 @@ class Validation implements ValidationInterface
             }
 
             // Otherwise remove the if_exist rule and continue the process
-            $rules = array_filter($rules, static fn ($rule) => $rule instanceof Closure || $rule !== 'if_exist');
+            $rules = array_diff($rules, ['if_exist']);
         }
 
         if (in_array('permit_empty', $rules, true)) {
@@ -259,7 +250,7 @@ class Validation implements ValidationInterface
                 $passed = true;
 
                 foreach ($rules as $rule) {
-                    if (! $this->isClosure($rule) && preg_match('/(.*?)\[(.*)\]/', $rule, $match)) {
+                    if (preg_match('/(.*?)\[(.*)\]/', $rule, $match)) {
                         $rule  = $match[1];
                         $param = $match[2];
 
@@ -284,7 +275,7 @@ class Validation implements ValidationInterface
                 }
             }
 
-            $rules = array_filter($rules, static fn ($rule) => $rule instanceof Closure || $rule !== 'permit_empty');
+            $rules = array_diff($rules, ['permit_empty']);
         }
 
         foreach ($rules as $i => $rule) {
@@ -492,14 +483,6 @@ class Validation implements ValidationInterface
                     $rule = ['rules' => $rule];
                 }
             }
-
-            if (isset($rule['rules']) && is_string($rule['rules'])) {
-                $rule['rules'] = $this->splitRules($rule['rules']);
-            }
-
-            if (is_string($rule)) {
-                $rule = ['rules' => $this->splitRules($rule)];
-            }
         }
 
         $this->rules = $rules;
@@ -662,68 +645,45 @@ class Validation implements ValidationInterface
      *
      * and the following rule:
      *
-     *  'is_unique[users,email,id,{id}]'
+     *  'required|is_unique[users,email,id,{id}]'
      *
      * The value of {id} would be replaced with the actual id in the form data:
      *
-     *  'is_unique[users,email,id,13]'
+     *  'required|is_unique[users,email,id,13]'
      */
     protected function fillPlaceholders(array $rules, array $data): array
     {
-        foreach ($rules as &$rule) {
-            $ruleSet = $rule['rules'];
+        $replacements = [];
 
-            foreach ($ruleSet as &$row) {
-                if (is_string($row)) {
-                    $placeholderFields = $this->retrievePlaceholders($row, $data);
+        foreach ($data as $key => $value) {
+            $replacements["{{$key}}"] = $value;
+        }
 
-                    foreach ($placeholderFields as $field) {
-                        $validator ??= Services::validation(null, false);
+        if ($replacements !== []) {
+            foreach ($rules as &$rule) {
+                $ruleSet = $rule['rules'] ?? $rule;
 
-                        $placeholderRules = $rules[$field]['rules'] ?? null;
-
-                        // Check if the validation rule for the placeholder exists
-                        if ($placeholderRules === null) {
-                            throw new LogicException(
-                                'No validation rules for the placeholder: ' . $field
-                            );
+                if (is_array($ruleSet)) {
+                    foreach ($ruleSet as &$row) {
+                        if (is_string($row)) {
+                            $row = strtr($row, $replacements);
                         }
-
-                        // Check if the rule does not have placeholders
-                        foreach ($placeholderRules as $placeholderRule) {
-                            if ($this->retrievePlaceholders($placeholderRule, $data)) {
-                                throw new LogicException(
-                                    'The placeholder field cannot use placeholder: ' . $field
-                                );
-                            }
-                        }
-
-                        // Validate the placeholder field
-                        if (! $validator->check($data[$field], implode('|', $placeholderRules))) {
-                            // if fails, do nothing
-                            continue;
-                        }
-
-                        // Replace the placeholder in the rule
-                        $ruleSet = str_replace('{' . $field . '}', $data[$field], $ruleSet);
                     }
                 }
-            }
 
-            $rule['rules'] = $ruleSet;
+                if (is_string($ruleSet)) {
+                    $ruleSet = strtr($ruleSet, $replacements);
+                }
+
+                if (isset($rule['rules'])) {
+                    $rule['rules'] = $ruleSet;
+                } else {
+                    $rule = $ruleSet;
+                }
+            }
         }
 
         return $rules;
-    }
-
-    /**
-     * Retrieves valid placeholder fields.
-     */
-    private function retrievePlaceholders(string $rule, array $data): array
-    {
-        preg_match_all('/{(.+?)}/', $rule, $matches);
-
-        return array_intersect($matches[1], array_keys($data));
     }
 
     /**

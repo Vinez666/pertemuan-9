@@ -259,19 +259,19 @@ class Entity implements JsonSerializable
             return $this->original !== $this->attributes;
         }
 
-        $dbColumn = $this->mapProperty($key);
+        $key = $this->mapProperty($key);
 
         // Key doesn't exist in either
-        if (! array_key_exists($dbColumn, $this->original) && ! array_key_exists($dbColumn, $this->attributes)) {
+        if (! array_key_exists($key, $this->original) && ! array_key_exists($key, $this->attributes)) {
             return false;
         }
 
         // It's a new element
-        if (! array_key_exists($dbColumn, $this->original) && array_key_exists($dbColumn, $this->attributes)) {
+        if (! array_key_exists($key, $this->original) && array_key_exists($key, $this->attributes)) {
             return true;
         }
 
-        return $this->original[$dbColumn] !== $this->attributes[$dbColumn];
+        return $this->original[$key] !== $this->attributes[$key];
     }
 
     /**
@@ -435,19 +435,19 @@ class Entity implements JsonSerializable
      */
     public function __set(string $key, $value = null)
     {
-        $dbColumn = $this->mapProperty($key);
+        $key = $this->mapProperty($key);
 
         // Check if the field should be mutated into a date
-        if (in_array($dbColumn, $this->dates, true)) {
+        if (in_array($key, $this->dates, true)) {
             $value = $this->mutateDate($value);
         }
 
-        $value = $this->castAs($value, $dbColumn, 'set');
+        $value = $this->castAs($value, $key, 'set');
 
         // if a set* method exists for this key, use that method to
         // insert this value. should be outside $isNullable check,
         // so maybe wants to do sth with null value automatically
-        $method = 'set' . str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $dbColumn)));
+        $method = 'set' . str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $key)));
 
         if (method_exists($this, $method)) {
             $this->{$method}($value);
@@ -459,7 +459,7 @@ class Entity implements JsonSerializable
         // class properties that are undefined, though they cannot be
         // saved. Useful for grabbing values through joins, assigning
         // relationships, etc.
-        $this->attributes[$dbColumn] = $value;
+        $this->attributes[$key] = $value;
 
         return $this;
     }
@@ -480,12 +480,12 @@ class Entity implements JsonSerializable
      */
     public function __get(string $key)
     {
-        $dbColumn = $this->mapProperty($key);
+        $key = $this->mapProperty($key);
 
         $result = null;
 
         // Convert to CamelCase for the method
-        $method = 'get' . str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $dbColumn)));
+        $method = 'get' . str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $key)));
 
         // if a get* method exists for this key,
         // use that method to insert this value.
@@ -495,17 +495,17 @@ class Entity implements JsonSerializable
 
         // Otherwise return the protected property
         // if it exists.
-        elseif (array_key_exists($dbColumn, $this->attributes)) {
-            $result = $this->attributes[$dbColumn];
+        elseif (array_key_exists($key, $this->attributes)) {
+            $result = $this->attributes[$key];
         }
 
         // Do we need to mutate this into a date?
-        if (in_array($dbColumn, $this->dates, true)) {
+        if (in_array($key, $this->dates, true)) {
             $result = $this->mutateDate($result);
         }
         // Or cast it as something?
         elseif ($this->_cast) {
-            $result = $this->castAs($result, $dbColumn);
+            $result = $this->castAs($result, $key);
         }
 
         return $result;
@@ -521,15 +521,15 @@ class Entity implements JsonSerializable
             return false;
         }
 
-        $dbColumn = $this->mapProperty($key);
+        $key = $this->mapProperty($key);
 
-        $method = 'get' . str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $dbColumn)));
+        $method = 'get' . str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $key)));
 
         if (method_exists($this, $method)) {
             return true;
         }
 
-        return isset($this->attributes[$dbColumn]);
+        return isset($this->attributes[$key]);
     }
 
     /**
@@ -541,9 +541,9 @@ class Entity implements JsonSerializable
             return;
         }
 
-        $dbColumn = $this->mapProperty($key);
+        $key = $this->mapProperty($key);
 
-        unset($this->attributes[$dbColumn]);
+        unset($this->attributes[$key]);
     }
 
     /**
@@ -551,10 +551,10 @@ class Entity implements JsonSerializable
      */
     protected function isMappedDbColumn(string $key): bool
     {
-        $dbColumn = $this->mapProperty($key);
+        $maybeColumnName = $this->mapProperty($key);
 
-        // The $key is a property name which has mapped db column name
-        if ($key !== $dbColumn) {
+        // Property name which has mapped column name
+        if ($key !== $maybeColumnName) {
             return false;
         }
 

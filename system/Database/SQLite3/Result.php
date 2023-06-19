@@ -80,8 +80,6 @@ class Result extends BaseResult
 
     /**
      * Frees the current result.
-     *
-     * @return void
      */
     public function freeResult()
     {

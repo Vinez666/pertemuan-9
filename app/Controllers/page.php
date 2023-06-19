@@ -8,8 +8,7 @@ class Page extends BaseController
     {
         return view('about', [
             'title' => 'Halaman About',
-            'content' => 'Ini adalah halaman abaut yang menjelaskan tentang isi
-halaman ini.'
+            'content' => "Ini adalah halaman about yang menjelaskan tentang isi halaman ini."
         ]);
     }
     public function contact()
@@ -22,6 +21,6 @@ halaman ini.'
     }
     public function tos()
     {
-        echo "ini halaman Term of Services";
+        echo "Ini halaman term of services";
     }
 }

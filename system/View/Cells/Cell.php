@@ -12,7 +12,6 @@
 namespace CodeIgniter\View\Cells;
 
 use CodeIgniter\Traits\PropertiesTrait;
-use LogicException;
 use ReflectionClass;
 
 /**
@@ -65,8 +64,6 @@ class Cell
      * from within the view, this method extracts $data into the
      * current scope and captures the output buffer instead of
      * relying on the view service.
-     *
-     * @throws LogicException
      */
     final protected function view(?string $view, array $data = []): string
     {
@@ -74,42 +71,30 @@ class Cell
         $properties = $this->includeComputedProperties($properties);
         $properties = array_merge($properties, $data);
 
-        $view = (string) $view;
-
-        if ($view === '') {
-            $viewName  = decamelize(class_basename(static::class));
-            $directory = dirname((new ReflectionClass($this))->getFileName()) . DIRECTORY_SEPARATOR;
-
-            $possibleView1 = $directory . substr($viewName, 0, strrpos($viewName, '_cell')) . '.php';
-            $possibleView2 = $directory . $viewName . '.php';
+        // If no view is specified, we'll try to guess it based on the class name.
+        if (empty($view)) {
+            // According to the docs, the name of the view file should be the
+            // snake_cased version of the cell's class name, but for backward
+            // compatibility, the name also accepts '_cell' being omitted.
+            $ref      = new ReflectionClass($this);
+            $view     = decamelize($ref->getShortName());
+            $viewPath = dirname($ref->getFileName()) . DIRECTORY_SEPARATOR . $view . '.php';
+            $view     = is_file($viewPath) ? $viewPath : str_replace('_cell', '', $view);
         }
 
-        if ($view !== '' && ! is_file($view)) {
-            $directory = dirname((new ReflectionClass($this))->getFileName()) . DIRECTORY_SEPARATOR;
-
-            $view = $directory . $view . '.php';
+        // Locate our view, preferring the directory of the class.
+        if (! is_file($view)) {
+            // Get the local pathname of the Cell
+            $ref  = new ReflectionClass($this);
+            $view = dirname($ref->getFileName()) . DIRECTORY_SEPARATOR . $view . '.php';
         }
 
-        $candidateViews = array_filter(
-            [$view, $possibleView1 ?? '', $possibleView2 ?? ''],
-            static fn (string $path): bool => $path !== '' && is_file($path)
-        );
-
-        if ($candidateViews === []) {
-            throw new LogicException(sprintf(
-                'Cannot locate the view file for the "%s" cell.',
-                static::class
-            ));
-        }
-
-        $foundView = current($candidateViews);
-
-        return (function () use ($properties, $foundView): string {
+        return (function () use ($properties, $view): string {
             extract($properties);
             ob_start();
-            include $foundView;
+            include $view;
 
-            return ob_get_clean();
+            return ob_get_clean() ?: '';
         })();
     }
 

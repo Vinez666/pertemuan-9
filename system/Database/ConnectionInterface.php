@@ -12,8 +12,8 @@
 namespace CodeIgniter\Database;
 
 /**
- * @template TConnection
- * @template TResult
+ * @template TConnection of object|resource
+ * @template TResult of object|resource
  */
 interface ConnectionInterface
 {

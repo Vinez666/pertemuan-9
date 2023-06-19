@@ -65,6 +65,7 @@ class CellGenerator extends BaseCommand
      */
     protected $options = [
         '--namespace' => 'Set root namespace. Default: "APP_NAMESPACE".',
+        '--suffix'    => 'Append the component title to the class name (e.g. User => UserCell).',
         '--force'     => 'Force overwrite existing file.',
     ];
 
@@ -73,26 +74,27 @@ class CellGenerator extends BaseCommand
      */
     public function run(array $params)
     {
-        $this->component = 'Cell';
-        $this->directory = 'Cells';
-
-        $params = array_merge($params, ['suffix' => null]);
-
+        // Generate the Class first
+        $this->component     = 'Cell';
+        $this->directory     = 'Cells';
         $this->template      = 'cell.tpl.php';
         $this->classNameLang = 'CLI.generator.className.cell';
+
         $this->generateClass($params);
 
-        $this->name          = 'make:cell_view';
-        $this->template      = 'cell_view.tpl.php';
+        // Generate the View
         $this->classNameLang = 'CLI.generator.viewName.cell';
 
-        $className = $this->qualifyClassName();
-        $viewName  = decamelize(class_basename($className));
-        $viewName  = preg_replace('/([a-z][a-z0-9_\/\\\\]+)(_cell)$/i', '$1', $viewName) ?? $viewName;
-        $namespace = substr($className, 0, strrpos($className, '\\') + 1);
+        // Form the view name
+        $segments = explode('\\', $this->qualifyClassName());
 
-        $this->generateView($namespace . $viewName, $params);
+        $view       = array_pop($segments);
+        $view       = decamelize($view);
+        $segments[] = $view;
+        $view       = implode('\\', $segments);
 
-        return 0;
+        $this->template = 'cell_view.tpl.php';
+
+        $this->generateView($view, $params);
     }
 }

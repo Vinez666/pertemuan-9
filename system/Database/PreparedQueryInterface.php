@@ -14,9 +14,9 @@ namespace CodeIgniter\Database;
 use BadMethodCallException;
 
 /**
- * @template TConnection
- * @template TStatement
- * @template TResult
+ * @template TConnection of object|resource
+ * @template TStatement of object|resource
+ * @template TResult of object|resource
  */
 interface PreparedQueryInterface
 {
